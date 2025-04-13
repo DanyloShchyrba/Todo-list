@@ -3,32 +3,55 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Мій To-Do List</title>
+  <title>ToDo-List</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="container">
-    <h1>Мій список завдань</h1>
+  <div class="layout">
+    
+    <!-- Сайдбар інструментів -->
+    <aside class="sidebar">
+      <h2>Інструменти</h2>
+      <input type="file" id="import-json" accept=".json" hidden />
+      <input type="file" id="import-txt" accept=".txt" hidden />
+      <button id="import-json-btn">📥 Імпорт .json</button>
+      <button id="import-txt-btn">📥 Імпорт .txt</button>
+      <button id="export-json-btn">📤 Експорт .json</button>
+      <button id="export-txt-btn">📤 Експорт .txt</button>
+    </aside>
 
-    <form id="task-form">
-      <input type="text" id="task-input" placeholder="Введи нове завдання..." required />
-      <button type="submit">Додати</button>
-    </form>
+    <!-- Основний вміст -->
+    <main class="container">
+      <h1>Список завдань</h1>
 
-    <div class="filter-row">
-      <div class="filters" id="status-filters">
-        <button data-filter="all" class="active">Всі</button>
-        <button data-filter="active">Активні</button>
-        <button data-filter="completed">Виконані</button>
+      <form id="task-form">
+        <input type="text" id="task-input" placeholder="Введи нове завдання..." required />
+        <button type="submit">Додати</button>
+      </form>
+
+      <div class="filter-row">
+        <div class="filters" id="status-filters">
+          <button data-filter="all" class="active">Всі</button>
+          <button data-filter="active">Активні</button>
+          <button data-filter="completed">Виконані</button>
+        </div>
+        <div class="filters" id="sort-controls">
+          <button id="sort-btn">Сортувати: найновіші</button>
+        </div>
       </div>
-      <div class="filters" id="sort-controls">
-        <button id="sort-btn">Сортувати: найновіші</button>
-      </div>
-    </div>
 
-    <ul id="task-list"></ul>
+      <ul id="task-list"></ul>
+    </main>
+
+    <!-- Правий блок прогресу -->
+    <aside class="progress-panel">
+      <h2>Прогрес</h2>
+      <canvas id="progress-chart" width="200" height="200"></canvas>
+    </aside>
+
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

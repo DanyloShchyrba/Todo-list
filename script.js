@@ -8,10 +8,19 @@ const taskInput = document.getElementById('task-input');
 const filterButtons = document.querySelectorAll('#status-filters button');
 const sortBtn = document.getElementById('sort-btn');
 
+const exportTxtBtn = document.getElementById('export-txt-btn');
+const exportJsonBtn = document.getElementById('export-json-btn');
+const importJsonBtn = document.getElementById('import-json-btn');
+const importTxtBtn = document.getElementById('import-txt-btn');
+const importJsonInput = document.getElementById('import-json');
+const importTxtInput = document.getElementById('import-txt');
+
+const chartCanvas = document.getElementById('progress-chart');
+let progressChart;
+
 function renderTasks() {
   taskList.innerHTML = '';
 
-  // Генеруємо список реальних індексів
   let visibleTasks = tasks
     .map((task, realIndex) => ({ task, realIndex }))
     .filter(({ task }) => {
@@ -49,8 +58,35 @@ function renderTasks() {
     `;
     taskList.appendChild(li);
   });
+
+  updateProgressChart();
 }
 
+function updateProgressChart() {
+  const completed = tasks.filter(t => t.completed).length;
+  const remaining = tasks.length - completed;
+
+  if (progressChart) progressChart.destroy();
+
+  progressChart = new Chart(chartCanvas, {
+    type: 'doughnut',
+    data: {
+      labels: ['Виконано', 'Невиконано'],
+      datasets: [{
+        data: [completed, remaining],
+        backgroundColor: ['#28a745', '#e0e0e0']
+      }]
+    },
+    options: {
+      plugins: {
+        legend: {
+          display: true
+        }
+      },
+      cutout: 0
+    }
+  });
+}
 
 taskForm.addEventListener('submit', e => {
   e.preventDefault();
@@ -60,7 +96,7 @@ taskForm.addEventListener('submit', e => {
       text,
       completed: false,
       createdAt: new Date().toISOString(),
-      completedAt: null,
+      completedAt: null
     });
     saveTasks();
     taskInput.value = '';
@@ -83,6 +119,79 @@ sortBtn.addEventListener('click', () => {
   renderTasks();
 });
 
+// ====== Експорт ======
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+exportTxtBtn.addEventListener('click', () => {
+  const lines = tasks.map(t => {
+    const status = t.completed ? '[ВИКОНАНО]' : '[ ]';
+    const date = new Date(t.createdAt).toLocaleString('uk-UA');
+    return `${status} ${t.text} (Додано: ${date})`;
+  });
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+  downloadBlob(blob, 'todo-tasks.txt');
+});
+
+exportJsonBtn.addEventListener('click', () => {
+  const json = JSON.stringify(tasks, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  downloadBlob(blob, 'todo-tasks.json');
+});
+
+// ====== Імпорт ======
+importJsonBtn.addEventListener('click', () => importJsonInput.click());
+importTxtBtn.addEventListener('click', () => importTxtInput.click());
+
+importJsonInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function () {
+    try {
+      const data = JSON.parse(reader.result);
+      if (Array.isArray(data)) {
+        tasks = data;
+        saveTasks();
+      } else {
+        alert('Файл JSON має бути масивом!');
+      }
+    } catch {
+      alert('Помилка парсингу JSON!');
+    }
+  };
+  reader.readAsText(file);
+});
+
+importTxtInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function () {
+    const lines = reader.result.split('\n').filter(Boolean);
+    const imported = lines.map(line => {
+      const isDone = line.startsWith('[ВИКОНАНО]');
+      const text = line.replace(/\[.*?\]\s*/, '').split('(Додано')[0].trim();
+      return {
+        text,
+        completed: isDone,
+        createdAt: new Date().toISOString(),
+        completedAt: isDone ? new Date().toISOString() : null
+      };
+    });
+    tasks = tasks.concat(imported);
+    saveTasks();
+  };
+  reader.readAsText(file);
+});
+
+// ====== Дії ======
 function markDone(index) {
   tasks[index].completed = true;
   tasks[index].completedAt = new Date().toISOString();
